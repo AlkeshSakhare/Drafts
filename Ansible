@@ -1,0 +1,169 @@
+Configured in Puppet Folder under ansible
+https://www.edureka.co/blog/install-ansible/
+
+https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-ansible-on-centos-7
+=======================================================
+Ansible Master(Control System)
+=======================================================
+
+Step 1 — Installing Ansible
+-----------------------------
+Update Pkgs
+[root@AnsibleMaster vagrant]# yum update -y
+
+
+
+Ansible by default not available to Yum pkgs, so To get Ansible for CentOS 7, first ensure that the CentOS 7 EPEL repository is installed:EPEL(Extra Pkgs for Entraprize Linux)
+sudo yum install epel-release
+[root@AnsibleMaster vagrant]# sudo yum install epel-release
+
+
+
+### Once the repository is installed, install Ansible with yum:
+sudo yum install ansible
+[root@AnsibleMaster vagrant]# sudo yum install ansible
+
+CHECK 	Version
+[root@AnsibleMaster vagrant]# ansible --version
+ansible 2.6.4
+  config file = /etc/ansible/ansible.cfg
+  configured module search path = [u'/root/.ansible/plugins/modules', u'/usr/share/ansible/plugins/modules']
+  ansible python module location = /usr/lib/python2.7/site-packages/ansible
+  executable location = /usr/bin/ansible
+  python version = 2.7.5 (default, Apr 11 2018, 07:36:10) [GCC 4.8.5 20150623 (Red Hat 4.8.5-28)]
+[root@AnsibleMaster vagrant]# 
+
+
+
+### Generate SSH key on the Ansible Control Machine.
+[root@AnsibleMaster vagrant]# ssh-keygen 
+
+
+
+### copy public key of Ansible server to its nodes.Here my node ip is : 192.168.0.108
+ssh-copy-id -i root@<ip address of your node machine>
+[root@AnsibleMaster vagrant]# ssh-copy-id -i root@192.168.0.108
+
+Error : Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
+Go to /etc/ssh/sshd_config uncomment 'PasswordAuthentication yes' then re-started the service 'sudo systemctl restart sshd'
+
+[root@AnsibleMaster vagrant]# ssh-copy-id -i root@192.168.0.110
+/usr/bin/ssh-copy-id: INFO: Source of key(s) to be installed: "/root/.ssh/id_rsa.pub"
+/usr/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/usr/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+root@192.168.0.110's password: 
+Number of key(s) added: 1
+Now try logging into the machine, with:   "ssh 'root@192.168.0.110'"
+and check to make sure that only the key(s) you wanted were added.
+
+
+### Test SSH Connection with host system
+[root@AnsibleMaster vagrant]# ssh 'root@192.168.0.110'
+[root@CentOS7-Agent ~]# who
+vagrant  pts/0        2018-09-29 18:46 (10.0.2.2)
+root     pts/1        2018-09-29 18:55 (192.168.0.107)
+[root@CentOS7-Agent ~]# 
+
+
+
+
+
+
+Step 2 — Configuring Ansible Hosts
+-----------------------------------
+Ansible keeps track of all of the Nodes by reading 'hosts' file.
+Just write all of our Node System details in this file
+
+sudo nano /etc/ansible/hosts
+
+[root@AnsibleMaster vagrant]# sudo vi /etc/ansible/hosts
+[test-servers]
+192.168.0.110
+
+
+
+
+Step 3 — Using Simple Ansible Commands
+--------------------------------------
+
+## Ping all of the node servers you configured by typing:
+[root@AnsibleMaster vagrant]# ansible -m ping all
+192.168.0.110 | SUCCESS => {
+    "changed": false, 
+    "ping": "pong"
+}
+
+
+
+### Check uptime of your node machines
+[root@AnsibleMaster vagrant]# ansible -m command -a "uptime" 'test-servers'
+192.168.0.110 | SUCCESS | rc=0 >>
+ 19:06:37 up 21 min,  2 users,  load average: 0.00, 0.02, 0.05
+
+
+### Check kernel version of your nodes
+[root@AnsibleMaster vagrant]# ansible -m command -a "uname" 'test-servers'
+192.168.0.110 | SUCCESS | rc=0 >>
+Linux
+
+
+
+
+Step 4 : Hands on : PlayBook to Deploy Nginx Using Ansible
+-------------------------------------------------
+Nginx is software to provide a web server. It can act as a reverse proxy server for TCP, UDP, HTTP, HTTPS, SMTP, POP3, and IMAP protocols, as well as a load balancer and an HTTP cache.
+
+
+### Write Play Book : nginx.yml
+---
+-
+  become: true
+  hosts: test-servers
+  name: "Install nginx"
+  tasks:
+    -
+      name: "Add epel-release repo"
+      yum:
+        name: epel-release
+        state: present
+    -
+      name: "Install nginx"
+      yum:
+        name: nginx
+        state: present
+    -
+      name: "Start NGiNX"
+      service:
+
+
+### Run the playbook, it will install nginx on nodes
+[root@AnsibleMaster vagrant]# ansible-playbook nginx.yml 
+
+PLAY [Install nginx] ********************************************************************************************************
+
+TASK [Gathering Facts] ******************************************************************************************************
+ok: [192.168.0.110]
+
+TASK [Add epel-release repo] ************************************************************************************************
+ok: [192.168.0.110]
+
+TASK [Install nginx] ********************************************************************************************************
+ok: [192.168.0.110]
+
+TASK [Start NGiNX] **********************************************************************************************************
+changed: [192.168.0.110]
+
+PLAY RECAP ******************************************************************************************************************
+192.168.0.110              : ok=4    changed=1    unreachable=0    failed=0   
+
+
+
+Now to check if it is installed in your node machine, type the following command in your node:
+ps waux | grep nginx
+[vagrant@CentOS7-Agent ~]$ ps waux | grep nginx
+root      5600  0.0  0.4 120812  2096 ?        Ss   19:53   0:00 nginx: master process /usr/sbin/nginx
+nginx     5601  0.0  0.6 121276  3132 ?        S    19:53   0:00 nginx: worker process
+vagrant   5626  0.0  0.1  12520   952 pts/0    S+   19:55   0:00 grep --color=auto nginx
+
+
+#################################################################################################

@@ -1,0 +1,811 @@
+
+https://www.edureka.co/blog/install-docker/
+Install : https://www.youtube.com/watch?v=lcQfQRDAMpQ&list=PL9ooVrP1hQOHUKuqGuiWLQoJ-LD25KxI5&index=2
+Edureka : https://www.youtube.com/watch?v=h0NCZbHjIpY&list=PL9ooVrP1hQOHUKuqGuiWLQoJ-LD25KxI5
+Next : https://www.youtube.com/watch?v=wi-MGFhrad0&list=PLhW3qG5bs-L99pQsZ74f-LC-tOEsBp2rK
+
+
+=====================================
+	Docker Install Ubuntu
+=====================================
+
+1.First, update your existing list of packages:
+sudo apt update
+
+2.Next, install a few prerequisite packages which let apt use packages over HTTPS:
+sudo apt install apt-transport-https ca-certificates curl software-properties-common
+
+3.Then add the GPG key for the official Docker repository to your system:
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+
+4.Add the Docker repository to APT sources:
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
+
+5.Next, update the package database with the Docker packages from the newly added repo:
+sudo apt update
+
+6.Make sure you are about to install from the Docker repo instead of the default Ubuntu repo:
+apt-cache policy docker-ce
+
+You'll see output like this, although the version number for Docker may be different:
+docker-ce:
+  Installed: (none)
+  Candidate: 18.03.1~ce~3-0~ubuntu
+  Version table:
+     18.03.1~ce~3-0~ubuntu 500
+        500 https://download.docker.com/linux/ubuntu bionic/stable amd64 Packages
+
+7.Notice that docker-ce is not installed, but the candidate for installation is from the Docker repository for Ubuntu 18.04 (bionic).So, install Docker:
+sudo apt install docker-ce
+
+8.Docker should now be installed, the daemon started, and the process enabled to start on boot. Check that it's running:
+sudo systemctl status docker
+● docker.service - Docker Application Container Engine
+   Loaded: loaded (/lib/systemd/system/docker.service; enabled; vendor preset: enabled)
+   Active: active (running) since Mon 2018-10-01 21:10:48 IST; 3min 39s ago
+
+if not start, start the service by running
+ sudo service docker start
+
+
+satya@satya:~/.../docker$ docker --version
+Docker version 18.06.1-ce, build e68fc7a
+
+
+
+
+=========================================================
+Task 1 : pull centos image from hub.docker
+=========================================================
+
+
+### Pull image from Docker Hub
+satya@satya:~/.../docker$ sudo docker pull centos
+Using default tag: latest
+latest: Pulling from library/centos
+256b176beaff: Pull complete 
+Digest: sha256:6f6d986d425aeabdc3a02cb61c02abb2e78e57357e92417d6d58332856024faf
+Status: Downloaded newer image for centos:latest
+
+First, it will check the local registry for CentOS image. If it doesn’t find there, then it will go to the docker hub and pull the image
+
+
+### Check Downloaded Image 
+	-By Def. location is /var/lib/docker
+	-In the case of aufs:/var/lib/docker/aufs/diff/<id>
+	-In the case of devicemapper:/var/lib/docker/devicemapper/devicemapper/data
+
+
+### Now, Run the CentOS container.
+satya@satya:~/.../docker$ sudo docker run -it centos
+[root@15458942452c /]# 
+You logged in centos successfully
+
+
+================================================
+Task 2  : Wordpress + MySQL + PhpMyAdmin
+================================================
+
+Basically, you need one container for WordPress and you need one more container as MySQL for back end, that MySQL container should be linked to the wordpress container. We also need one more container for Php Myadmin that will be linked to MySQL database, basically, it is used to access MySQL database.
+
+ [ Worpress ]
+     |
+    link= wordprees+ MySQL
+     |	
+ [ MySQL  ]
+     |
+    link= MySql+ PhpMyAdmin
+     |	
+ [ PhpMyAdmin ]
+
+Here we will write Docker Compose file to install & make link between them
+
+Steps involved:
+-------------------
+	1. Install Docker Compose:
+	2. Install WordPress: We’ll be using the official WordPress and MariaDB Docker images. 
+	3. Install MariaDB: MariaDB is a relational database it provides an SQL interface for 		   accessing data.
+	4. Install PhpMyAdmin: handle the administration of MySQL over the Web. 
+	5. Create The WordPress Site
+
+
+
+
+1. Install Docker Compose
+--------------------------------
+
+### Install Python Pip first:
+sudo apt-get install python-pip -y
+
+### Now, you can install Docker Compose:
+sudo pip install docker-compose
+
+
+
+2. Install WordPress:
+-------------------------------
+### Create a wordpress directory:
+mkdir wordpress
+cd wordpress/
+
+
+### In this directory create a Docker Compose YAML file, then edit it using gedit:
+sudo gedit docker-compose.yml
+--------------------------------------------------------
+version: "2"
+services:
+  my-wpdb:
+    image: mariadb
+    ports:
+      - "8081:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+  my-wp:
+    image: wordpress
+    volumes:
+      - ./:/var/www/html
+    ports:
+      - "8080:80"
+    links:
+      - my-wpdb:mysql
+    environment:
+      WORDPRESS_DB_PASSWORD: root
+  phpmyadmin: 
+    image: corbinu/docker-phpmyadmin 
+    links: 
+      - my-wpdb:mysql
+    ports: 
+      - 8181:80
+    environment: 
+      MYSQL_USERNAME: root 
+      MYSQL_ROOT_PASSWORD: root
+--------------------------------------------------------
+
+
+### Now start the application group:
+satya@satya:~/.../Wordpress$ docker-compose up -d
+ERROR: Couldn't connect to Docker daemon at http+docker://localhost - is it running?
+
+this error means you don't have enogh permissions. so run with Sudi
+satya@satya:~/.../Wordpress$ sudo docker-compose up -d
+
+
+
+### Test wordpress
+http://localhost:8080/
+
+
+### Test PhpMyAdmin
+http://localhost:8181/
+
+
+
+===========================================
+Docker AWS Installation
+===========================================
+https://www.youtube.com/watch?v=HqBMEmoAd1M&index=7&list=PLhW3qG5bs-L99pQsZ74f-LC-tOEsBp2rK
+-------------------------
+Using Amazon Linux AMI
+--------------------------
+
+sudo yum -y update
+
+sudo yum install -y docker
+
+sudo service docker status
+sudo service docker start
+sudo service docker stop
+
+
+
+sudo docker info
+
+sudo usermod -a -G docker ec2-user
+
+sudo docker images
+
+sudo docker ps -a
+
+docker run <image_name>
+
+sudo docker run hello-world
+
+
+sudo yum remove docker
+
+getdocker.com
+
+
+===============================
+Docker COmmands
+==============================
+
+basic
+------
+sudo docker version
+
+sudo docker -v
+
+sudo docker info
+
+sudo docker --help
+
+sudo docker login
+
+
+
+Images
+----------
+sudo docker images
+
+sudo docker pull
+
+sudo docker rmi
+
+sudo docker
+
+sudo docker
+
+
+
+Conatiners
+----------=
+sudo docker ps
+
+sudo docker run
+
+sudo docker start
+
+sudo docker stop
+
+sudo docker
+
+
+
+System
+--------------
+sudo docker stats
+
+sudo docker system df
+
+sudo docker system prune
+
+sudo docker
+
+sudo docker
+
+sudo docker
+
+
+
+-----------------------------
+Create Docker Images
+------------------------------
+[root@ip-172-31-22-216 ec2-user]# docker pull ubuntu
+Using default tag: latest
+latest: Pulling from library/ubuntu
+124c757242f8: Pull complete 
+9d866f8bde2a: Pull complete 
+fa3f2f277e67: Pull complete 
+398d32b153e8: Pull complete 
+afde35469481: Pull complete 
+Digest: sha256:de774a3145f7ca4f0bd144c7d4ffb2931e06634f11529653b23eba85aef8e378
+Status: Downloaded newer image for ubuntu:latest
+
+[root@ip-172-31-22-216 ec2-user]# docker images
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+hello-world         latest              4ab4c602aa5e        3 weeks ago         1.84kB
+ubuntu              latest              cd6d8154f1e1        3 weeks ago         84.1MB
+
+
+To get Specfic version
+[root@ip-172-31-22-216 ec2-user]# docker pull ubuntu:18.04
+18.04: Pulling from library/ubuntu
+Digest: sha256:de774a3145f7ca4f0bd144c7d4ffb2931e06634f11529653b23eba85aef8e378
+Status: Downloaded newer image for ubuntu:18.04
+
+By running Docker image, we are creating Container
+docker run --name MyDockerUbuntu -it ubuntu bash
+
+[root@ip-172-31-22-216 ec2-user]# sudo docker run -it ubuntu
+root@76baecadb14d:/# 
+root@76baecadb14d:/# ls
+bin  boot  dev  etc  home  lib  lib64  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var
+root@76baecadb14d:/# 
+
+
+
+-----------------------------
+Create Docker Containers
+------------------------------
+Dockerfile : 
+A text file with instructions to build image
+Automation of Docker Image Creation
+
+FROM
+RUN
+CMD
+
+
+Step 1 : Create a file named Dockerfile
+
+Step 2 : Add instructions in Dockerfile
+
+Step 3 : Build dockerfile to create image
+
+Step 4 : Run image to create container
+
+
+
+Containers are the Running instances of Images. 
+When ever we run the image, it creates a Container
+
+Create Our Own Imgage
+----------------------
+create a Directory /Docker, write a Dockerfile under it
+
+
+Dockerfile
+--------------
+#Getting base image Ubuntu
+FROM ubuntu
+
+MAINTAINER smlcodes<smlcodes@gmail.com>
+
+RUN apt-get update
+
+CMD ["echo" , "Hello, Im Satya"]
+
+
+Create Docker Image
+------------------
+Go to /Docker location & Run
+docker build -t smlcodes1:1.0 .
+
+[root@ip-172-31-22-216 Docker]# docker build -t smlcodes1:1.0 .
+Sending build context to Docker daemon  2.048kB
+Step 1/4 : FROM ubuntu
+ ---> cd6d8154f1e1
+Step 2/4 : MAINTAINER smlcodes<smlcodes@gmail.com>
+ ---> Running in 53f4f543c194
+Removing intermediate container 53f4f543c194
+ ---> 78dd08c39f7b
+Step 3/4 : RUN apt-get update
+ ---> Running in 4d6c57bf6859
+Successfully built 863bc0cd3f7c
+Successfully tagged smlcodes1:1.0
+
+Check Image in the List
+------------------------------------
+If you check the list image is created locally.
+image just contains a program to print hello
+
+[root@ip-172-31-22-216 Docker]# sudo docker images
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+smlcodes1           1.0                 863bc0cd3f7c        4 minutes ago       127MB
+hello-world         latest              4ab4c602aa5e        3 weeks ago         1.84kB
+ubuntu              18.04               cd6d8154f1e1        3 weeks ago         84.1MB
+ubuntu              latest              cd6d8154f1e1        3 weeks ago         84.1MB
+
+
+Run your image, it will create container
+-------------------------------------------
+[root@ip-172-31-22-216 Docker]# sudo docker run -it smlcodes1
+Unable to find image 'smlcodes1:latest' locally
+docker: Error response from daemon: pull access denied for smlcodes1, repository does not exist or may require 'docker login'.
+See 'docker run --help'
+
+If You got this error Login with Your Docker account or use id to Run [sudo docker run -it 863bc0cd3f7c ]
+[root@ip-172-31-22-216 Docker]# docker login
+Login with your Docker ID to push and pull images from Docker Hub. If you don't have a Docker ID, head over to https://hub.docker.com to create one.
+Username: smlcodes
+Password: 
+
+
+[root@ip-172-31-22-216 Docker]# sudo docker run -it smlcodes1:1.0
+Hello, Im Satya
+
+
+-------------------------------------
+Docker Compose
+------------------------------------
+
+Docker compose
+: tool for defining & running multi-container docker applications
+: use yaml files to configure application services (docker-compose.yml)
+: can start all services with a single command : docker compose up
+: can stop all services with a single command : docker compose down
+: can scale up selected services when required
+
+
+Step 1 : install docker compose
+   (already installed on windows and mac with docker)
+   docker-compose -v
+ 
+   2 Ways
+
+   1.  https://github.com/docker/compose/rel...
+
+   2. Using PIP
+    pip install -U docker-compose
+
+Step 2 : Create docker compose file at any location on your system
+   docker-compose.yml
+------------------------
+[root@ip-172-31-22-216 Docker]# cat docker-compose.yml 
+version: '3.3'
+
+services:
+
+  web:
+    image: nginx
+
+  database:
+    image: redis
+
+
+Step 3 : Check the validity of file by command
+    docker-compose config
+
+Step 4 : Run docker-compose.yml file by command
+ sudo docker-compose up -d
+
+Steps 5 : Bring down application by command
+   docker-compose down
+
+TIPS
+How to scale services
+
+—scale
+docker-compose up -d --scale database=4
+
+
+--------------------------------------
+Docker Volumes
+-----------------------------=-------
+-By default all files created inside a container are stored on a writable container layer
+
+-The data doesn’t persist when that container is no longer running
+
+-A container’s writable layer is tightly coupled to the host machine where the container is running. You can’t easily move the data somewhere else.
+
+-Docker has two options for containers to store files in the host machine
+so that the files are persisted even after the container stops
+
+Use of Volumes
+===========
+Decoupling container from storage
+Share volume (storage/data) among different containers
+Attach volume to container
+On deleting container volume does not delete
+
+
+: docker volume  //get information
+: docker volume create
+: docker volume ls
+: docker volume inspect
+: docker volume rm
+: docker volume prune
+
+VOLUMES  and  BIND MOUNTS
+----------------------------------------------------------
+-Volumes are stored in a part of the host filesystem which is managed by Docker
+
+-Non-Docker processes should not modify this part of the filesystem
+
+-Bind mounts may be stored anywhere on the host system
+
+-Non-Docker processes on the Docker host or a Docker container can modify them at any time
+
+-In Bind Mounts, the file or directory is referenced by its full path on the host machine. 
+
+-Volumes are the best way to persist data in Docker
+
+-volumes are managed by Docker and are isolated from the core functionality of the host machine
+
+-A given volume can be mounted into multiple containers simultaneously.
+
+-When no running container is using a volume, the volume is still available to Docker and is not removed automatically. You can remove unused volumes using docker volume prune.
+
+-When you mount a volume, it may be named or anonymous. 
+
+-Anonymous volumes are not given an explicit name when they are first mounted into a container
+
+-Volumes also support the use of volume drivers, which allow you to store your data on remote hosts or cloud providers, among other possibilities.
+
+
+
+### Create Volume
+satya@satya:~/.../docker$ sudo docker volume create myvol1
+myvol1
+
+
+### list the docker volumes
+satya@satya:~/.../docker$ sudo docker volume ls
+DRIVER              VOLUME NAME
+local               046cd7015ac74c659beb1f8d93293993161f1e4103715cdc29c4b447a105dcf2
+local               3c6e5051ff9c98b23829c45e4a374f1426f7bbd15eab39d52720f1d8337dea82
+local               9c8f01a4316e809eee624833b4538afc39e7e8194e81ee792e8ce5873b87298e
+local               myvol1
+
+
+satya@satya:~/.../docker$ sudo docker volume inspect myvol1
+[
+    {
+        "CreatedAt": "2018-10-02T19:42:26+05:30",
+        "Driver": "local",
+        "Labels": {},
+        "Mountpoint": "/var/lib/docker/volumes/myvol1/_data",
+        "Name": "myvol1",
+        "Options": {},
+        "Scope": "local"
+    }
+]
+
+
+### to remove volume
+satya@satya:~/.../docker$ sudo docker volume rm -f myvol1
+
+
+### to remove all unused volumes
+sudo docker volume prune
+
+====================
+Example - using Jenkins
+====================
+
+1.pull Jenkins
+docker pull jenkins
+
+
+2.Now i want to store the all /var/.jenkins related data to 'myvol1', so that if we delete
+jenkins container , the jenkins data will be available, to do so run below cmd
+
+sudo docker run -p 8080:8080 -p 50000:50000 jenkins
+This command will directly store the data into the container only
+
+satya@satya:~/.../docker$ sudo docker run --name MyJenkins1 -v myvol1:/var/jenkins_home -p 8080:8080 -p 50000:50000 jenkins
+Here all jenkins data of 'MyJenkins1' will be stored at myvol1
+
+
+IF We start the another Jenkins instance with same volume location, docker wont create another
+jenkins intsnace, instead ot will share the same data to newly added jenkins with another port
+satya@satya:~/.../docker$ sudo docker run --name MyJenkins2 -v myvol1:/var/jenkins_home -p 9090:8080 -p 50000:50000 jenkins
+
+Commands
+docker run --name MyJenkins1 -v myvol1:/var/jenkins_home -p 8080:8080 -p 50000:50000 jenkins
+docker run --name MyJenkins2 -v myvol1:/var/jenkins_home -p 9090:8080 -p 60000:50000 jenkins
+
+Bind Physical Location
+----------------------
+docker run --name MyJenkins3 -v /Users/raghav/Desktop/Jenkins_Home:/var/jenkins_home -p 9191:8080 -p 40000:50000 jenkins
+
+References
+https://hub.docker.com/_/jenkins/
+https://docs.docker.com/storage/volumes/
+
+
+
+=========================
+Docker Swarm
+======================
+-A swarm is a group of machines that are running Docker and joined into a cluster.
+-Docker Swarm is a tool for Container Orchestration
+
+
+Let’s take an example
+--------------------
+You have 100 containers,You need to do 
+- Health check on every container
+- Ensure all containers are up on every system
+- Scaling the containers up or down depending on the load
+- Adding updates/changes to all the containers
+
+Orchestration - managing and controlling multiple docker containers as a single service
+Tools available - Docker Swarm, Kubernetes, Apache Mesos
+
+
+
+Pre-requisites
+1. Docker 1.13 or higher
+2. Docker Machine (pre installed for Docker for Windows and Docker for Mac)https://docs.docker.com/machine/insta...
+https://docs.docker.com/get-started/p...
+
+
+
+
+
+Step 1 :  Create Docker machines (to act as nodes for Docker Swarm)   Create one machine as manager and others as workers
+    docker-machine create --driver hyperv manager1    docker-machine create --driver virtualbox manager1
+
+   docker-machine:Error with pre-create check: “exit status 126”
+   https://stackoverflow.com/questions/3...
+   brew cask install virtualbox;
+
+   Create one manager machine
+   and other worker machines
+
+
+Step 2 :  Check machine created successfully
+    docker-machine ls
+    docker-machine ip manager1
+
+
+Step 3 :  SSH (connect) to docker machine
+    docker-machine ssh manager1
+
+
+Step 4 :  Initialize Docker Swarm    docker swarm init --advertise-addr MANAGER_IP
+    docker node ls
+    (this command will work only in swarm manager and not in worker)
+
+
+Step 5 :  Join workers in the swarm
+    Get command for joining as worker
+    In manager node run command
+    docker swarm join-token worker
+    This will give command to join swarm as worker
+
+    docker swarm join-token manager
+    This will give command to join swarm as manager
+
+    SSH into worker node (machine) and run command to join swarm as worker
+   
+    In Manager Run command - docker node ls to verify worker is registered and is ready
+  
+    Do this for all worker machines
+
+
+Step 6 :  On manager run standard docker commands
+    docker info
+    check the swarm section 
+    no of manager, nodes etc
+
+    Now check docker swarm command options 
+    docker swarm 
+
+
+Step 7 :  Run containers on Docker Swarm
+    docker service create --replicas 3 -p 80:80 --name serviceName nginx
+
+    Check the status:
+    docker service ls
+    docker service ps serviceName
+   
+    Check the service running on all nodes
+    Check on the browser by giving ip for all nodes
+
+
+Step 8 :  Scale service up and down
+   On manager node 
+   docker service scale serviceName=2
+ 
+
+Inspecting Nodes (this command can run only on manager node)
+docker node inspect nodename
+docker node inspect self
+docker node inspect worker1
+
+
+Step 9 : Shutdown node
+   docker node update --availability drain worker1
+
+
+Step 10 :  Update service
+   docker service update --image imagename:version web
+   docker service update --image nginx:1.14.0 serviceName
+
+
+Step 11 :  Remove service
+   docker service rm serviceName
+
+
+docker swarm leave : to leave the swarm
+docker-machine stop machineName : to stop the machine
+docker-machine rm machineName : to remove the machine
+
+
+REFERENCES:
+https://docs.docker.com/get-started/p...
+https://rominirani.com/docker-swarm-t...
+
+
+
+
+
+FAQs & Helpful Tips:
+
+A swarm is a group of machines that are running Docker and joined into a cluster
+
+A cluster is managed by swarm manager
+
+The machines in a swarm can be physical or virtual. After joining a swarm, they are referred to as nodes
+
+Swarm managers are the only machines in a swarm that can execute your commands, or authorise other machines to join the swarm as workers
+
+Workers are just there to provide capacity and do not have the authority to tell any other machine what it can and cannot do
+
+you can have a node join as a worker or as a manager. At any point in time, there is only one LEADER and the other manager nodes will be as backup in case the current LEADER opts out
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
